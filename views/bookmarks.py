@@ -3,7 +3,8 @@ from flask_restful import Resource
 from models import Bookmark, db
 import json
 from . import can_view_post
-from my_decorators import handle_db_insert_error
+from my_decorators import secure_bookmark, \
+    handle_db_insert_error, check_ownership_of_bookmark, is_valid_int
 
 
 class BookmarksListEndpoint(Resource):
@@ -21,7 +22,8 @@ class BookmarksListEndpoint(Resource):
         ]
         return Response(json.dumps(bookmark_list_of_dictionaries), mimetype="application/json", status=200)
 
-
+    @is_valid_int
+    @secure_bookmark
     @handle_db_insert_error
     def post(self):
         '''
@@ -36,6 +38,7 @@ class BookmarksListEndpoint(Resource):
         # this is the data that the user sent us:
         body = request.get_json()
         post_id = body.get('post_id')
+        
         # to create a Bookmark, you need to pass it a user_id and a post_id
         
         bookmark = Bookmark(self.current_user.id, post_id)
@@ -52,9 +55,17 @@ class BookmarkDetailEndpoint(Resource):
     def __init__(self, current_user):
         self.current_user = current_user
     
+    @check_ownership_of_bookmark
     def delete(self, id):
-        # Your code here
-        return Response(json.dumps({}), mimetype="application/json", status=200)
+        # bookmark = Bookmark.query.get(id)
+
+        Bookmark.query.filter_by(id=id).delete()
+        db.session.commit()
+        serialized_data = {
+            'message': 'Bookmark {0} successfully deleted.'.format(id)
+        }
+        return Response(json.dumps(serialized_data), mimetype="application/json", status=200)
+
 
 
 

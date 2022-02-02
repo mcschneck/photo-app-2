@@ -1,6 +1,8 @@
 from datetime import datetime
 import json
 from flask import Response, request
+from views import can_view_post
+from models import Bookmark
 
 # # Decorator Format:
 # # https://realpython.com/primer-on-python-decorators/
@@ -175,11 +177,12 @@ from flask import Response, request
 #             )
 #     return wrapper
 
-def handle_db_insert_error(func):
-    def wrapper(self, *args, **kwargs):
+def handle_db_insert_error(endpoint_function):
+    def outer_function(self, *args, **kwargs):
+        print('handle_db_insert_error')
         try:
             # try to execute the query:
-            return func(self, *args, **kwargs)
+            return endpoint_function(self, *args, **kwargs)
         except:
             import sys
             db_message = str(sys.exc_info()[1]) # stores DB error message
@@ -193,4 +196,79 @@ def handle_db_insert_error(func):
                 'post_data': post_data
             }
             return Response(json.dumps(response_obj), mimetype="application/json", status=400)
-    return wrapper
+    return outer_function
+
+
+def is_valid_int(endpoint_function):
+    def outer_function_with_security_checks(self):
+        try:
+            body = request.get_json()
+            post_id = body.get('post_id')
+            post_id = int(post_id)
+        except:
+            response_obj = {
+                'message': 'Invalid post_id={0}'.format(post_id)
+            }
+            return Response(json.dumps(response_obj), mimetype="application/json", status=400)
+        return endpoint_function(self)
+    return outer_function_with_security_checks
+
+def secure_bookmark(endpoint_function):
+    def outer_function_with_security_checks(self):
+        print('secure_bookmark')
+        body = request.get_json()
+        post_id = body.get('post_id')
+        print(post_id)
+        print(can_view_post(post_id, self.current_user))
+        if can_view_post(post_id, self.current_user):
+            return endpoint_function(self)
+        else:
+            response_obj = {
+                'message': 'You don\'t have access to post_id={0}'.format(post_id)
+            }
+            return Response(json.dumps(response_obj), mimetype="application/json", status=404)
+            
+    return outer_function_with_security_checks
+
+
+def check_ownership_of_bookmark(endpoint_function):
+    def outer_function_with_security_checks(self, id):
+        print(id)
+        bookmark = Bookmark.query.get(id)
+        if bookmark.user_id == self.current_user.id:
+            return endpoint_function(self, id)
+        else:
+            response_obj = {
+                'message': 'You did not create bookmark id={0}'.format(id)
+            }
+            return Response(json.dumps(response_obj), mimetype="application/json", status=404)
+            
+    return outer_function_with_security_checks
+
+
+
+
+
+
+
+
+
+
+
+# def secure_bookmark(func):
+#     def wrapper(self):
+#         body = request.get_json()
+#         post_id = body.get('post_id')
+
+#         # first do the security check:
+#         if can_view_post(post_id, self.current_user):
+#             # if it passes, execute the endpoint function
+#             return func(self)
+#         else:
+#             # otherwise, return a 404 error
+#             return Response(
+#                 json.dumps({'message': 'POST id={0} does not exist'.format(post_id)}), 
+#                 mimetype="application/json", 
+#                 status=404
+#             )
+#     return wrapper
