@@ -10,8 +10,9 @@ class StoriesListEndpoint(Resource):
         self.current_user = current_user
     
     def get(self):
-        # Your code here:
-        return Response(json.dumps([]), mimetype="application/json", status=200)
+        # this is broken:
+        stories = Story.query.limit(5).all()
+        return Response(json.dumps([story.to_dict() for story in stories]), mimetype="application/json", status=200)
 
 
 def initialize_routes(api):
