@@ -20,23 +20,8 @@ const displayStories = () => {
 
 /*
 <section class="card">
-    <div class="header">
-        <h3>${ post.user.username }</h3>
-        <i class="fa fa-dots"></i>
-    </div>
-    <img src="${ post.image_url }" alt="Image posted by ${ post.user.username }" width="300" height="300">
-    <div class="info">
-        <div class="buttons">
-            <div>
-                <i class="far fa-heart"></i>
-                <i class="far fa-comment"></i>
-                <i class="far fa-paper-plane"></i>
-            </div>
-            <div>
-                <i class="far fa-bookmark"></i>
-            </div>
-        </div>
-        <p class="likes"><strong>{{ post.get('likes') }} likes</strong></p>
+        Already done
+       
         <div class="caption">
             <p>
                 <strong>{{ post.get('user').get('username') }}</strong> 
@@ -66,6 +51,10 @@ const displayStories = () => {
 
 */
 
+const likeUnlike = ev => {
+    console.log('like / unlike button clicked');
+};
+
 const post2Html = post => {
     return `
         <section class="card">
@@ -77,16 +66,26 @@ const post2Html = post => {
             <div class="info">
                 <div class="buttons">
                     <div>
-                        <i class="far fa-heart"></i>
+                        <button onclick="likeUnlike(event)">
+                            <i class="fa${ post.current_user_like_id ? 's' : 'r' } fa-heart"></i>
+                        </button>
                         <i class="far fa-comment"></i>
                         <i class="far fa-paper-plane"></i>
                     </div>
                     <div>
-                        <i class="far fa-bookmark"></i>
+                        <i class="fa${ post.current_user_bookmark_id ? 's' : 'r' } fa-bookmark"></i>
                     </div>
                 </div>
+                <p class="likes"><strong>${ post.likes.length } like${post.likes.length != 1 ? 's' : ''}</strong></p>
+
+                <div class="caption">
+                <p>
+                    <strong>${ post.user.username }</strong> 
+                    ${ post.caption }
+                </p>
             </div>
-            TODO: # of likes, caption, comments, add a comment
+            </div>
+            TODO: comments, add a comment
         </section>
     `;
 };
